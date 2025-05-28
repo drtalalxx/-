@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<title>حساب توقيت الدورة الشهرية</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #f0f8ff;
+    text-align: right;
+    line-height: 1.8;
+  }
+  h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    margin-top: 20px;
+    font-weight: bold;
+    color: #111;
+  }
+  input, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  input[type="date"], input[type="number"] {
+    direction: rtl;
+    text-align: right;
+  }
+  button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background: #45a049;
+  }
+  .result {
+    margin-top: 30px;
+    padding: 20px;
+    background: #e6ffe6;
+    border-radius: 5px;
+    font-weight: bold;
+    min-height: 60px;
+    border: 1px solid #ccc;
+    transition: background-color 0.3s ease;
+  }
+  .error {
+    background: #ffe6e6;
+    color: #900;
+  }
+</style>
+</head>
+<body>
+
+<h2>حساب توقيت الدورة الشهرية</h2>
+
+<form id="cycleForm">
+  <label for="interval">دورتك الشهرية تأتي كل؟ (عدد الأيام)</label>
+  <input type="number" id="interval" min="21" max="35" required placeholder="أدخلي عدد الأيام (21-35)" />
+
+  <label for="lastCycle">تاريخ آخر دورة شهرية</label>
+  <input type="date" id="lastCycle" required placeholder="اختاري التاريخ" />
+
+  <label for="procedureDate">تاريخ الحقن</label>
+  <input type="date" id="procedureDate" required placeholder="اختاري التاريخ" />
+
+  <button type="submit">احسب</button>
+</form>
+
+<div class="result" id="result" aria-live="polite">يرجى إدخال البيانات لعرض النتيجة</div>
+
+<script>
+document.getElementById('cycleForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const intervalInput = document.getElementById('interval').value.trim();
+  const lastCycleInput = document.getElementById('lastCycle').value.trim();
+  const procedureDateInput = document.getElementById('procedureDate').value.trim();
+  const resultDiv = document.getElementById('result');
+
+  // Reset resultDiv
+  resultDiv.className = 'result';
+  resultDiv.textContent = 'جارٍ الحساب...';
+
+  // Validate interval
+  const interval = parseInt(intervalInput, 10);
+  if (!interval || interval < 21 || interval > 35) {
+    resultDiv.textContent = 'أدخلي عدد أيام بين 21 و35 يومًا لدورة منتظمة.';
+    resultDiv.className += ' error';
+    return;
+  }
+
+  // Validate dates
+  if (!lastCycleInput || !procedureDateInput) {
+    resultDiv.textContent = 'يرجى اختيار تواريخ صالحة لكلا الحقلين.';
+    resultDiv.className += ' error';
+    return;
+  }
+
+  const lastCycle = new Date(lastCycleInput);
+  const procedureDate = new Date(procedureDateInput);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Ensure dates are valid and not in the future
+  if (isNaN(lastCycle.getTime()) || isNaN(procedureDate.getTime()) || lastCycle > today || procedureDate > today) {
+    resultDiv.textContent = 'يرجى اختيار تواريخ صحيحة وغير مستقبلية.';
+    resultDiv.className += ' error';
+    return;
+  }
+
+  // Calculate days between lastCycle and procedureDate
+  const diffDays = Math.floor((procedureDate - lastCycle) / (1000 * 60 * 60 * 24));
+
+  // Determine the start of the nearest cycle
+  let cycleStartDate;
+  if (diffDays >= 0) {
+    const cyclesElapsed = Math.floor(diffDays / interval);
+    cycleStartDate = new Date(lastCycle);
+    cycleStartDate.setDate(lastCycle.getDate() + cyclesElapsed * interval);
+  } else {
+    const cyclesBefore = Math.ceil(Math.abs(diffDays) / interval);
+    cycleStartDate = new Date(lastCycle);
+    cycleStartDate.setDate(lastCycle.getDate() - cyclesBefore * interval);
+  }
+
+  const cycleDay = Math.floor((procedureDate - cycleStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+  // Validate cycle day
+  if (cycleDay < 1 || cycleDay > interval) {
+    resultDiv.textContent = 'حدث خطأ في حساب مرحلة الدورة، حاولي مرة أخرى.';
+    resultDiv.className += ' error';
+    return;
+  }
+
+  // Determine the cycle phase
+  if (cycleDay <= 5) {
+    resultDiv.textContent = `تلقيتِ الحقن خلال فترة الحيض (اليوم ${cycleDay} من دورتك الشهرية). شكرًا الآن عودي لإستكمال الإستبيان`;
+  } else if (cycleDay <= 14) {
+    resultDiv.textContent = `تلقيتِ الحقن في مرحلة التبويض المحتملة (اليوم ${cycleDay} من دورتك الشهرية). اختاري أسبوع بعد الحيض. شكرًا الآن عودي لإستكمال الإستبيان`;
+  } else {
+    resultDiv.textContent = `تلقيتِ الحقن خلال المرحلة الأصفرية (اليوم ${cycleDay} من دورتك الشهرية). أختاري أسبوعين قبل الحيض. شكرًا الآن عودي لإستكمال الإستبيان`;
+  }
+});
+</script>
+
+</body>
+</html>
