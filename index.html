@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex"> <!-- Remove if page should be indexed -->
+  <title>أداة حساب الدورة الشهرية</title>
+  <style>
+    /* General Styles */
+    body {
+      font-family: 'Tajawal', Arial, sans-serif;
+      background: linear-gradient(135deg, #f9f9f9, #e6f7ff);
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      text-align: center;
+      overflow: auto;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #444;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1.2rem;
+      color: #333;
+      margin: 10px 0;
+    }
+
+    /* Form Styles */
+    .calculator-form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    label {
+      display: block;
+      font-size: 1rem;
+      margin: 10px 0 5px;
+      color: #444;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #4caf50;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 1.1rem;
+      color: #333;
+    }
+
+    /* Decorative Elements */
+    .background-circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(76, 175, 80, 0.1);
+      animation: float 6s infinite ease-in-out;
+      z-index: -1;
+    }
+
+    .circle-1 {
+      width: 200px;
+      height: 200px;
+      top: 10%;
+      inset-inline-start: 20%;
+    }
+
+    .circle-2 {
+      width: 300px;
+      height: 300px;
+      top: 70%;
+      inset-inline-end: 15%;
+    }
+
+    .circle-3 {
+      width: 150px;
+      height: 150px;
+      top: 40%;
+      inset-inline-start: 60%;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-20px);
+      }
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+      p {
+        font-size: 1rem;
+      }
+      .calculator-form {
+        padding: 15px;
+      }
+      .circle-1 {
+        width: 100px;
+        height: 100px;
+        top: 5%;
+        inset-inline-start: 10%;
+      }
+      .circle-2 {
+        width: 150px;
+        height: 150px;
+        top: 65%;
+        inset-inline-end: 10%;
+      }
+      .circle-3 {
+        width: 80px;
+        height: 80px;
+        top: 35%;
+        inset-inline-start: 50%;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Decorative Background Circles -->
+  <div class="background-circle circle-1"></div>
+  <div class="background-circle circle-2"></div>
+  <div class="background-circle circle-3"></div>
+
+  <!-- Main Content -->
+  <h1>أداة حساب الدورة الشهرية</h1>
+  <p aria-live="polite">أدخل تاريخ بداية آخر دورة شهرية ومتوسط طول الدورة للحصول على التواريخ المتوقعة.</p>
+
+  <!-- Calculator Form -->
+  <form class="calculator-form" onsubmit="calculateCycle(event)">
+    <label for="lastPeriod">تاريخ بداية آخر دورة شهرية:</label>
+    <input type="date" id="lastPeriod" required>
+    <label for="cycleLength">متوسط طول الدورة (بالأيام):</label>
+    <input type="number" id="cycleLength" min="20" max="45" value="28" required>
+    <button type="submit">احسب</button>
+  </form>
+
+  <!-- Results Display -->
+  <div id="result" aria-live="polite"></div>
+
+  <script>
+    function calculateCycle(event) {
+      event.preventDefault();
+      const lastPeriod = new Date(document.getElementById('lastPeriod').value);
+      const cycleLength = parseInt(document.getElementById('cycleLength').value);
+      const resultDiv = document.getElementById('result');
+
+      if (isNaN(lastPeriod) || isNaN(cycleLength)) {
+        resultDiv.innerHTML = 'يرجى إدخال تاريخ وطول دورة صالحين.';
+        return;
+      }
+
+      // Calculate next period
+      const nextPeriod = new Date(lastPeriod);
+      nextPeriod.setDate(lastPeriod.getDate() + cycleLength);
+
+      // Estimate ovulation (approx. 14 days before next period)
+      const ovulation = new Date(nextPeriod);
+      ovulation.setDate(nextPeriod.getDate() - 14);
+
+      // Format dates for Arabic (using toLocaleDateString for simplicity)
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      const nextPeriodStr = nextPeriod.toLocaleDateString('ar-EG', options);
+      const ovulationStr = ovulation.toLocaleDateString('ar-EG', options);
+
+      resultDiv.innerHTML = `
+        <p>الدورة الشهرية التالية المتوقعة: ${nextPeriodStr}</p>
+        <p>فترة الإباضة المتوقعة: ${ovulationStr}</p>
+      `;
+    }
+  </script>
+
+</body>
+</html>
